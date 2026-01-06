@@ -1,52 +1,86 @@
 package cli
 
 import (
-	"bufio"
 	"context"
+	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"claude-test/internal/anthropic"
-	"claude-test/internal/config"
 )
 
 type CLI struct {
-	client *anthropic.Client
-	config *config.Config
+	apiKey    string
+	model     string
+	maxTokens int
+	prompt    string
 }
 
-func New(client *anthropic.Client, cfg *config.Config) *CLI {
+func NewCLI() *CLI {
 	return &CLI{
-		client: client,
-		config: cfg,
+		model:     "claude-sonnet-4-20250514",
+		maxTokens: 1024,
+	}
+}
+
+func (c *CLI) Parse(args []string) error {
+	fs := flag.NewFlagSet("claude-test", flag.ContinueOnError)
+	fs.Usage = c.usage(fs)
+
+	fs.StringVar(&c.apiKey, "apikey", os.Getenv("ANTHROPIC_API_KEY"), "Anthropic API key (or set ANTHROPIC_API_KEY)")
+	fs.StringVar(&c.model, "model", c.model, "Model to use")
+	fs.IntVar(&c.maxTokens, "maxtokens", c.maxTokens, "Max tokens in response")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	if c.apiKey == "" {
+		fs.Usage()
+		return fmt.Errorf("API key is required: use -apikey flag or set ANTHROPIC_API_KEY")
+	}
+
+	remaining := fs.Args()
+	if len(remaining) == 0 {
+		fs.Usage()
+		return fmt.Errorf("prompt is required")
+	}
+
+	if len(remaining) > 1 {
+		fs.Usage()
+		return fmt.Errorf("too many arguments")
+	}
+
+	c.prompt = remaining[0]
+	return nil
+}
+
+func (c *CLI) usage(fs *flag.FlagSet) func() {
+	return func() {
+		var b strings.Builder
+		b.WriteString("claude-test - CLI tool to interact with Claude API\n\n")
+		b.WriteString("usage: claude-test [options] <prompt>\n\n")
+		b.WriteString("options:\n")
+		fs.SetOutput(&b)
+		fs.PrintDefaults()
+		fs.SetOutput(os.Stderr)
+		b.WriteString("\nexamples:\n")
+		b.WriteString("  claude-test \"Hello Claude\"\n")
+		b.WriteString("  claude-test -model=claude-haiku-3-5-20241022 \"What is 2+2?\"\n")
+		b.WriteString("  claude-test -apikey=sk-... -maxtokens=2048 \"Write a poem\"\n")
+		fmt.Fprintln(os.Stderr, b.String())
 	}
 }
 
 func (c *CLI) Run(ctx context.Context) error {
-	fmt.Println("Claude API Test Client")
-	fmt.Printf("Model: %s, Max Tokens: %d\n", c.config.Model, c.config.MaxTokens)
-	fmt.Println("Type your message (or 'quit' to exit):")
-	fmt.Print("> ")
+	client := anthropic.NewClient(c.apiKey)
 
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		input := scanner.Text()
-		if input == "quit" {
-			break
-		}
-
-		response, err := c.client.SendMessage(ctx, c.config.Model, c.config.MaxTokens, input)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-		} else {
-			fmt.Printf("\nClaude: %s\n", response)
-		}
-		fmt.Print("\n> ")
+	response, err := client.SendMessage(ctx, c.model, c.maxTokens, c.prompt)
+	if err != nil {
+		return err
 	}
 
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("reading input: %w", err)
-	}
-
+	fmt.Println(response)
 	return nil
 }

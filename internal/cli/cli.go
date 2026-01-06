@@ -25,7 +25,7 @@ func NewCLI() *CLI {
 }
 
 func (c *CLI) Parse(args []string) error {
-	fs := flag.NewFlagSet("claude-test", flag.ContinueOnError)
+	fs := flag.NewFlagSet("claude-api", flag.ContinueOnError)
 	fs.Usage = c.usage(fs)
 
 	fs.StringVar(&c.apiKey, "apikey", os.Getenv("ANTHROPIC_API_KEY"), "Anthropic API key (or set ANTHROPIC_API_KEY)")
@@ -59,16 +59,16 @@ func (c *CLI) Parse(args []string) error {
 func (c *CLI) usage(fs *flag.FlagSet) func() {
 	return func() {
 		var b strings.Builder
-		b.WriteString("claude-test - CLI tool to interact with Claude API\n\n")
-		b.WriteString("usage: claude-test [options] <prompt>\n\n")
+		b.WriteString("claude-api - CLI tool to interact with Claude API\n\n")
+		b.WriteString("usage: claude-api [options] <prompt>\n\n")
 		b.WriteString("options:\n")
 		fs.SetOutput(&b)
 		fs.PrintDefaults()
 		fs.SetOutput(os.Stderr)
 		b.WriteString("\nexamples:\n")
-		b.WriteString("  claude-test \"Hello Claude\"\n")
-		b.WriteString("  claude-test -model=claude-haiku-3-5-20241022 \"What is 2+2?\"\n")
-		b.WriteString("  claude-test -apikey=sk-... -maxtokens=2048 \"Write a poem\"\n")
+		b.WriteString("  claude-api \"Hello Claude\"\n")
+		b.WriteString("  claude-api -model=claude-haiku-3-5-20241022 \"What is 2+2?\"\n")
+		b.WriteString("  claude-api -apikey=sk-... -maxtokens=2048 \"Write a poem\"\n")
 		fmt.Fprintln(os.Stderr, b.String())
 	}
 }

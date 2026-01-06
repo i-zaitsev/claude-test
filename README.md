@@ -13,7 +13,7 @@ Simple CLI tool to interact with Claude API.
 ## Build
 
 ```bash
-go build -o claude-test ./cmd/claude-test
+go build -o claude-api ./cmd/claude-api
 ```
 
 ## Usage
@@ -35,14 +35,14 @@ claude-test [options] <prompt>
 ```bash
 # Using environment variable for API key
 export ANTHROPIC_API_KEY="sk-ant-api03-..."
-./claude-test "Hello Claude"
+./claude-api "Hello Claude"
 
 # Passing API key directly
-./claude-test -apikey="sk-ant-api03-..." "What is 2+2?"
+./claude-api -apikey="sk-ant-api03-..." "What is 2+2?"
 
 # Using a different model
-./claude-test -model=claude-haiku-3-5-20241022 "Write a haiku"
+./claude-api -model=claude-haiku-3-5-20241022 "Write a haiku"
 
 # Combining options
-./claude-test -apikey="sk-ant-api03-..." -model=claude-opus-4-20250514 -maxtokens=2048 "Explain quantum computing"
+./claude-api -apikey="sk-ant-api03-..." -model=claude-opus-4-20250514 -maxtokens=2048 "Explain quantum computing"
 ```
